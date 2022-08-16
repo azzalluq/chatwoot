@@ -1,18 +1,37 @@
 {
   "CAMPAIGN": {
     "HEADER": "Kampagnen",
-    "SIDEBAR_TXT": "Proaktive Nachrichten erlauben dem Kunden, ausgehende Nachrichten an seine Kontakte zu senden, was weitere Unterhaltungen auslösen würde. Klicke auf <b>Kampagne hinzufügen</b> um eine neue Kampagne zu erstellen. Sie können auch eine bestehende Kampagne bearbeiten oder löschen, indem Sie auf die Schaltfläche Bearbeiten oder Löschen klicken.",
-    "HEADER_BTN_TXT": "Kampagne erstellen",
+    "SIDEBAR_TXT": "Proaktive Nachrichten ermöglichen es dem Kunden, ausgehende Nachrichten an seine Kontakte zu senden, die mehr Gespräche auslösen würden. Klicken Sie auf <b>Kampagne hinzufügen</b>, um eine neue Kampagne zu erstellen. Sie können eine bestehende Kampagne auch bearbeiten oder löschen, indem Sie auf die Schaltfläche Bearbeiten oder Löschen klicken.",
+    "HEADER_BTN_TXT": {
+      "ONE_OFF": "Eine einmalige Kampagne erstellen",
+      "ONGOING": "Eine laufende Kampagne erstellen"
+    },
     "ADD": {
       "TITLE": "Kampagne erstellen",
-      "DESC": "Proaktive Nachrichten erlauben dem Kunden, ausgehende Nachrichten an seine Kontakte zu senden, was weitere Unterhaltungen auslösen würde.",
-      "CANCEL_BUTTON_TEXT": "Stornieren",
+      "DESC": "Proaktive Nachrichten ermöglichen es dem Kunden, ausgehende Nachrichten an seine Kontakte zu senden, die mehr Konversationen auslösen würden.",
+      "CANCEL_BUTTON_TEXT": "Abbrechen",
       "CREATE_BUTTON_TEXT": "Erstellen",
       "FORM": {
         "TITLE": {
           "LABEL": "Titel",
           "PLACEHOLDER": "Bitte geben Sie den Titel der Kampagne ein",
           "ERROR": "Titel ist erforderlich"
+        },
+        "SCHEDULED_AT": {
+          "LABEL": "Geplanter Zeitpunkt",
+          "PLACEHOLDER": "Bitte wählen Sie die Zeit",
+          "CONFIRM": "Bestätigen",
+          "ERROR": "Geplante Zeit ist erforderlich"
+        },
+        "AUDIENCE": {
+          "LABEL": "Zielgruppe",
+          "PLACEHOLDER": "Kunden-Labels auswählen",
+          "ERROR": "Zielgruppe ist erforderlich"
+        },
+        "INBOX": {
+          "LABEL": "Posteingang auswählen",
+          "PLACEHOLDER": "Posteingang auswählen",
+          "ERROR": "Posteingang ist erforderlich"
         },
         "MESSAGE": {
           "LABEL": "Nachricht",
@@ -35,11 +54,25 @@
           "ERROR": "Uhrzeit auf Seite ist erforderlich"
         },
         "ENABLED": "Kampagne aktivieren",
+        "TRIGGER_ONLY_BUSINESS_HOURS": "Nur während Geschäftszeiten auslösen",
         "SUBMIT": "Kampagne hinzufügen"
       },
       "API": {
         "SUCCESS_MESSAGE": "Kampagne erfolgreich erstellt",
         "ERROR_MESSAGE": "Es ist ein Fehler aufgetreten, bitte versuchen Sie es erneut."
+      }
+    },
+    "DELETE": {
+      "BUTTON_TEXT": "Löschen",
+      "CONFIRM": {
+        "TITLE": "Löschung bestätigen",
+        "MESSAGE": "Sind Sie sicher, dass Sie das löschen möchten?",
+        "YES": "Ja, löschen ",
+        "NO": "Nein, behalten "
+      },
+      "API": {
+        "SUCCESS_MESSAGE": "Kampagne erfolgreich gelöscht",
+        "ERROR_MESSAGE": "Die Kampagne konnte nicht gelöscht werden. Bitte versuchen Sie es später noch einmal."
       }
     },
     "EDIT": {
@@ -52,13 +85,15 @@
     },
     "LIST": {
       "LOADING_MESSAGE": "Lade Kampagnen...",
-      "404": "There are no campaigns created for this inbox.",
+      "404": "Es wurden keine Kampagnen für diesen Posteingang erstellt.",
       "TABLE_HEADER": {
         "TITLE": "Titel",
         "MESSAGE": "Nachricht",
+        "INBOX": "Posteingang",
         "STATUS": "Status",
         "SENDER": "Absender",
         "URL": "URL",
+        "SCHEDULED_AT": "Geplanter Zeitpunkt",
         "TIME_ON_PAGE": "Zeit (Sekunden)",
         "CREATED_AT": "Erstellt am"
       },
@@ -69,11 +104,23 @@
       },
       "STATUS": {
         "ENABLED": "Aktiviert",
-        "DISABLED": "Behindert"
+        "DISABLED": "Deaktiviert",
+        "COMPLETED": "Erledigt",
+        "ACTIVE": "Aktiv"
       },
       "SENDER": {
         "BOT": "Bot"
       }
+    },
+    "ONE_OFF": {
+      "HEADER": "Einmalige Kampagne",
+      "404": "Keine einmalige Kampagnen",
+      "INBOXES_NOT_FOUND": "Bitte erstellen Sie einen SMS-Posteingang und fügen Sie Kampagnen hinzu"
+    },
+    "ONGOING": {
+      "HEADER": "Laufende Kampagnen",
+      "404": "Keine laufende Kampagnen",
+      "INBOXES_NOT_FOUND": "Bitte erstellen Sie einen Website-Posteingang und fügen Sie Kampagnen hinzu"
     }
   }
 }

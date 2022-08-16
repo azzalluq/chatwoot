@@ -25,6 +25,8 @@ RSpec.describe 'Agent Bot API', type: :request do
         expect(response).to have_http_status(:success)
         expect(response.body).to include(agent_bot.name)
         expect(response.body).to include(global_bot.name)
+        expect(response.body).to include(agent_bot.access_token.token)
+        expect(response.body).not_to include(global_bot.access_token.token)
       end
     end
   end
@@ -46,6 +48,7 @@ RSpec.describe 'Agent Bot API', type: :request do
 
         expect(response).to have_http_status(:success)
         expect(response.body).to include(agent_bot.name)
+        expect(response.body).to include(agent_bot.access_token.token)
       end
 
       it 'will show a global agent bot' do
@@ -56,6 +59,7 @@ RSpec.describe 'Agent Bot API', type: :request do
 
         expect(response).to have_http_status(:success)
         expect(response.body).to include(global_bot.name)
+        expect(response.body).not_to include(global_bot.access_token.token)
       end
     end
   end
@@ -65,7 +69,7 @@ RSpec.describe 'Agent Bot API', type: :request do
 
     context 'when it is an unauthenticated user' do
       it 'returns unauthorized' do
-        expect { post "/api/v1/accounts/#{account.id}/agent_bots", params: valid_params }.to change(Label, :count).by(0)
+        expect { post "/api/v1/accounts/#{account.id}/agent_bots", params: valid_params }.not_to change(Label, :count)
 
         expect(response).to have_http_status(:unauthorized)
       end
@@ -85,7 +89,7 @@ RSpec.describe 'Agent Bot API', type: :request do
         expect do
           post "/api/v1/accounts/#{account.id}/agent_bots", headers: agent.create_new_auth_token,
                                                             params: valid_params
-        end.to change(AgentBot, :count).by(0)
+        end.not_to change(AgentBot, :count)
 
         expect(response).to have_http_status(:unauthorized)
       end
@@ -113,6 +117,7 @@ RSpec.describe 'Agent Bot API', type: :request do
 
         expect(response).to have_http_status(:success)
         expect(agent_bot.reload.name).to eq('test_updated')
+        expect(response.body).to include(agent_bot.access_token.token)
       end
 
       it 'would not update the agent bot when agent' do
@@ -134,6 +139,7 @@ RSpec.describe 'Agent Bot API', type: :request do
 
         expect(response).to have_http_status(:not_found)
         expect(agent_bot.reload.name).not_to eq('test_updated')
+        expect(response.body).not_to include(global_bot.access_token.token)
       end
     end
   end

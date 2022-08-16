@@ -1,5 +1,5 @@
 import { MESSAGE_TYPE } from 'widget/helpers/constants';
-import groupBy from 'lodash.groupby';
+import { groupBy } from 'widget/helpers/utils';
 import { groupConversationBySender } from './helpers';
 import { formatUnixDate } from 'shared/helpers/DateHelper';
 
@@ -27,6 +27,9 @@ export const getters = {
     }));
   },
   getIsFetchingList: _state => _state.uiFlags.isFetchingList,
+  getMessageCount: _state => {
+    return Object.values(_state.conversations).length;
+  },
   getUnreadMessageCount: _state => {
     const { userLastSeenAt } = _state.meta;
     const count = Object.values(_state.conversations).filter(chat => {

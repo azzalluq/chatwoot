@@ -8,14 +8,17 @@ class Api::V1::Widget::MessagesController < Api::V1::Widget::BaseController
 
   def create
     @message = conversation.messages.new(message_params)
-    @message.save
     build_attachment
+    @message.save!
   end
 
   def update
     if @message.content_type == 'input_email'
       @message.update!(submitted_email: contact_email)
-      update_contact(contact_email)
+      ContactIdentifyAction.new(
+        contact: @contact,
+        params: { email: contact_email }
+      ).perform
     else
       @message.update!(message_update_params[:message])
     end
@@ -31,11 +34,11 @@ class Api::V1::Widget::MessagesController < Api::V1::Widget::BaseController
     params[:message][:attachments].each do |uploaded_attachment|
       attachment = @message.attachments.new(
         account_id: @message.account_id,
-        file_type: helpers.file_type(uploaded_attachment&.content_type)
+        file: uploaded_attachment
       )
-      attachment.file.attach(uploaded_attachment)
+
+      attachment.file_type = helpers.file_type(uploaded_attachment&.content_type) if uploaded_attachment.is_a?(ActionDispatch::Http::UploadedFile)
     end
-    @message.save!
   end
 
   def set_conversation
@@ -54,10 +57,11 @@ class Api::V1::Widget::MessagesController < Api::V1::Widget::BaseController
   end
 
   def message_update_params
-    params.permit(message: [{ submitted_values: [:name, :title, :value] }])
+    params.permit(message: [{ submitted_values: [:name, :title, :value, { csat_survey_response: [:feedback_message, :rating] }] }])
   end
 
   def permitted_params
+    # timestamp parameter is used in create conversation method
     params.permit(:id, :before, :website_token, contact: [:name, :email], message: [:content, :referer_url, :timestamp, :echo_id])
   end
 

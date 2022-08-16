@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 require 'rails_helper'
-require Rails.root.join 'spec/models/concerns/access_tokenable_spec.rb'
+require Rails.root.join 'spec/models/concerns/access_tokenable_shared.rb'
+require Rails.root.join 'spec/models/concerns/avatarable_shared.rb'
 
 RSpec.describe User do
   let!(:user) { create(:user) }
@@ -16,21 +17,22 @@ RSpec.describe User do
     it { is_expected.to have_many(:accounts).through(:account_users) }
     it { is_expected.to have_many(:account_users) }
     it { is_expected.to have_many(:assigned_conversations).class_name('Conversation').dependent(:nullify) }
-    it { is_expected.to have_many(:inbox_members).dependent(:destroy) }
-    it { is_expected.to have_many(:notification_settings).dependent(:destroy) }
+    it { is_expected.to have_many(:inbox_members).dependent(:destroy_async) }
+    it { is_expected.to have_many(:notification_settings).dependent(:destroy_async) }
     it { is_expected.to have_many(:messages) }
-    it { is_expected.to have_many(:events) }
+    it { is_expected.to have_many(:reporting_events) }
     it { is_expected.to have_many(:teams) }
   end
 
   describe 'concerns' do
     it_behaves_like 'access_tokenable'
+    it_behaves_like 'avatarable'
   end
 
   describe 'pubsub_token' do
     before { user.update(name: Faker::Name.name) }
 
-    it { expect(user.pubsub_token).not_to eq(nil) }
+    it { expect(user.pubsub_token).not_to be_nil }
     it { expect(user.saved_changes.keys).not_to eq('pubsub_token') }
   end
 
@@ -58,18 +60,33 @@ RSpec.describe User do
       sso_auth_token2 = user.generate_sso_auth_token
       expect(sso_auth_token1).present?
       expect(sso_auth_token2).present?
-      expect(user.valid_sso_auth_token?(sso_auth_token1)).to eq true
-      expect(user.valid_sso_auth_token?(sso_auth_token2)).to eq true
+      expect(user.valid_sso_auth_token?(sso_auth_token1)).to be true
+      expect(user.valid_sso_auth_token?(sso_auth_token2)).to be true
     end
 
     it 'wont validate an invalid token' do
-      expect(user.valid_sso_auth_token?(SecureRandom.hex(32))).to eq false
+      expect(user.valid_sso_auth_token?(SecureRandom.hex(32))).to be false
     end
 
     it 'wont validate an invalidated token' do
       sso_auth_token = user.generate_sso_auth_token
       user.invalidate_sso_auth_token(sso_auth_token)
-      expect(user.valid_sso_auth_token?(sso_auth_token)).to eq false
+      expect(user.valid_sso_auth_token?(sso_auth_token)).to be false
+    end
+  end
+
+  describe 'access token' do
+    it 'creates a single access token upon user creation' do
+      new_user = create(:user)
+      token_count = AccessToken.where(owner: new_user).count
+      expect(token_count).to eq(1)
+    end
+  end
+
+  context 'when user changes the email' do
+    it 'mutates the value' do
+      user.email = 'user@example.com'
+      expect(user.will_save_change_to_email?).to be true
     end
   end
 end

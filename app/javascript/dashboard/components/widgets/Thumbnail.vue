@@ -9,31 +9,66 @@
     />
     <Avatar
       v-else
-      :username="username"
+      :username="userNameWithoutEmoji"
       :class="thumbnailClass"
-      color="white"
       :size="avatarSize"
+      :variant="variant"
     />
     <img
-      v-if="badge === 'Channel::FacebookPage'"
+      v-if="badge === 'instagram_direct_message'"
       id="badge"
       class="source-badge"
       :style="badgeStyle"
-      src="~dashboard/assets/images/fb-badge.png"
+      src="/integrations/channels/badges/instagram-dm.png"
     />
     <img
-      v-if="badge === 'Channel::TwitterProfile'"
+      v-else-if="badge === 'facebook'"
       id="badge"
       class="source-badge"
       :style="badgeStyle"
-      src="~dashboard/assets/images/twitter-badge.png"
+      src="/integrations/channels/badges/messenger.png"
     />
     <img
-      v-if="badge === 'Channel::TwilioSms'"
+      v-else-if="badge === 'twitter-tweet'"
       id="badge"
       class="source-badge"
       :style="badgeStyle"
-      src="~dashboard/assets/images/channels/whatsapp.png"
+      src="/integrations/channels/badges/twitter-tweet.png"
+    />
+    <img
+      v-else-if="badge === 'twitter-dm'"
+      id="badge"
+      class="source-badge"
+      :style="badgeStyle"
+      src="/integrations/channels/badges/twitter-dm.png"
+    />
+    <img
+      v-else-if="badge === 'whatsapp'"
+      id="badge"
+      class="source-badge"
+      :style="badgeStyle"
+      src="/integrations/channels/badges/whatsapp.png"
+    />
+    <img
+      v-else-if="badge === 'sms'"
+      id="badge"
+      class="source-badge"
+      :style="badgeStyle"
+      src="/integrations/channels/badges/sms.png"
+    />
+    <img
+      v-else-if="badge === 'Channel::Line'"
+      id="badge"
+      class="source-badge"
+      :style="badgeStyle"
+      src="/integrations/channels/badges/line.png"
+    />
+    <img
+      v-else-if="badge === 'Channel::Telegram'"
+      id="badge"
+      class="source-badge"
+      :style="badgeStyle"
+      src="/integrations/channels/badges/telegram.png"
     />
     <div
       v-if="showStatusIndicator"
@@ -51,6 +86,7 @@
  * Username - User name for avatar
  */
 import Avatar from './Avatar';
+import { removeEmoji } from 'shared/helpers/emoji';
 
 export default {
   components: {
@@ -81,6 +117,14 @@ export default {
       type: Boolean,
       default: false,
     },
+    shouldShowStatusAlways: {
+      type: Boolean,
+      default: false,
+    },
+    variant: {
+      type: String,
+      default: 'circle',
+    },
   },
   data() {
     return {
@@ -88,15 +132,21 @@ export default {
     };
   },
   computed: {
+    userNameWithoutEmoji() {
+      return removeEmoji(this.username);
+    },
     showStatusIndicator() {
+      if (this.shouldShowStatusAlways) return true;
       return this.status === 'online' || this.status === 'busy';
     },
     avatarSize() {
       return Number(this.size.replace(/\D+/g, ''));
     },
     badgeStyle() {
-      const badgeSize = `${this.avatarSize / 3}px`;
-      return { width: badgeSize, height: badgeSize };
+      const size = Math.floor(this.avatarSize / 3);
+      const badgeSize = `${size + 2}px`;
+      const borderRadius = `${size / 2}px`;
+      return { width: badgeSize, height: badgeSize, borderRadius };
     },
     statusStyle() {
       const statusSize = `${this.avatarSize / 4}px`;
@@ -104,7 +154,9 @@ export default {
     },
     thumbnailClass() {
       const classname = this.hasBorder ? 'border' : '';
-      return `user-thumbnail ${classname}`;
+      const variant =
+        this.variant === 'circle' ? 'thumbnail-rounded' : 'thumbnail-square';
+      return `user-thumbnail ${classname} ${variant}`;
     },
   },
   watch: {
@@ -125,19 +177,20 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import '~dashboard/assets/scss/variables';
-@import '~dashboard/assets/scss/foundation-settings';
-@import '~dashboard/assets/scss/mixins';
-
 .user-thumbnail-box {
-  @include flex-shrink;
+  flex: 0 0 auto;
+  max-width: 100%;
   position: relative;
 
   .user-thumbnail {
     border-radius: 50%;
+    &.thumbnail-square {
+      border-radius: var(--border-radius-large);
+    }
     height: 100%;
     width: 100%;
     box-sizing: border-box;
+    object-fit: cover;
 
     &.border {
       border: 1px solid white;
@@ -145,16 +198,20 @@ export default {
   }
 
   .source-badge {
-    bottom: -$space-micro;
-    height: $space-slab;
+    background: white;
+    border-radius: var(--border-radius-small);
+    bottom: var(--space-minus-micro);
+    box-shadow: var(--shadow-small);
+    height: var(--space-slab);
+    padding: var(--space-micro);
     position: absolute;
-    right: $zero;
-    width: $space-slab;
+    right: 0;
+    width: var(--space-slab);
   }
 
   .user-online-status {
     border-radius: 50%;
-    bottom: $space-micro;
+    bottom: var(--space-micro);
 
     &:after {
       content: ' ';
@@ -162,11 +219,19 @@ export default {
   }
 
   .user-online-status--online {
-    background: $success-color;
+    background: var(--g-400);
   }
 
   .user-online-status--busy {
-    background: $warning-color;
+    background: var(--y-500);
+  }
+
+  .user-online-status--offline {
+    background: var(--s-500);
+  }
+
+  .user-online-status--offline {
+    background: var(--s-500);
   }
 }
 </style>

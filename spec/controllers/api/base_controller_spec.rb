@@ -32,7 +32,7 @@ RSpec.describe 'API Base', type: :request do
   describe 'request with api_access_token for bot' do
     let!(:agent_bot) { create(:agent_bot) }
     let!(:inbox) { create(:inbox, account: account) }
-    let!(:conversation) { create(:conversation, account: account, inbox: inbox, assignee: user, status: 'bot') }
+    let!(:conversation) { create(:conversation, account: account, inbox: inbox, assignee: user, status: 'pending') }
 
     context 'when it is an unauthorized url' do
       it 'returns unauthorized' do
@@ -54,6 +54,18 @@ RSpec.describe 'API Base', type: :request do
 
         expect(response).to have_http_status(:success)
         expect(conversation.reload.status).to eq('open')
+      end
+    end
+
+    context 'when the account is suspended' do
+      it 'returns 401 unauthorized' do
+        account.update!(status: :suspended)
+
+        post "/api/v1/accounts/#{account.id}/canned_responses",
+             headers: { api_access_token: user.access_token.token },
+             as: :json
+
+        expect(response).to have_http_status(:unauthorized)
       end
     end
   end

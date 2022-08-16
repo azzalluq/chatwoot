@@ -10,24 +10,42 @@
           <woot-code
             v-if="currentInbox.web_widget_script"
             :script="currentInbox.web_widget_script"
-          >
-          </woot-code>
+          />
         </div>
         <div class="medium-6 small-offset-3">
           <woot-code
             v-if="isATwilioInbox"
             lang="html"
-            :script="twilioCallbackURL"
-          >
-          </woot-code>
+            :script="currentInbox.callback_webhook_url"
+          />
+        </div>
+        <div class="medium-6 small-offset-3">
+          <woot-code
+            v-if="isAWhatsappWhatsappCloudInbox"
+            lang="html"
+            :script="currentInbox.callback_webhook_url"
+          />
+        </div>
+        <div class="medium-6 small-offset-3">
+          <woot-code
+            v-if="isALineInbox"
+            lang="html"
+            :script="currentInbox.callback_webhook_url"
+          />
+        </div>
+        <div class="medium-6 small-offset-3">
+          <woot-code
+            v-if="isASmsInbox"
+            lang="html"
+            :script="currentInbox.callback_webhook_url"
+          />
         </div>
         <div class="medium-6 small-offset-3">
           <woot-code
             v-if="isAEmailInbox"
             lang="html"
             :script="currentInbox.forward_to_email"
-          >
-          </woot-code>
+          />
         </div>
         <div class="footer">
           <router-link
@@ -75,6 +93,18 @@ export default {
     isAEmailInbox() {
       return this.currentInbox.channel_type === 'Channel::Email';
     },
+    isALineInbox() {
+      return this.currentInbox.channel_type === 'Channel::Line';
+    },
+    isASmsInbox() {
+      return this.currentInbox.channel_type === 'Channel::Sms';
+    },
+    isAWhatsappWhatsappCloudInbox() {
+      return (
+        this.currentInbox.channel_type === 'Channel::Whatsapp' &&
+        this.currentInbox.provider === 'whatsapp_cloud'
+      );
+    },
     message() {
       if (this.isATwilioInbox) {
         return `${this.$t('INBOX_MGMT.FINISH.MESSAGE')}. ${this.$t(
@@ -82,14 +112,33 @@ export default {
         )}`;
       }
 
+      if (this.isASmsInbox) {
+        return `${this.$t('INBOX_MGMT.FINISH.MESSAGE')}. ${this.$t(
+          'INBOX_MGMT.ADD.SMS.BANDWIDTH.API_CALLBACK.SUBTITLE'
+        )}`;
+      }
+
+      if (this.isALineInbox) {
+        return `${this.$t('INBOX_MGMT.FINISH.MESSAGE')}. ${this.$t(
+          'INBOX_MGMT.ADD.LINE_CHANNEL.API_CALLBACK.SUBTITLE'
+        )}`;
+      }
+
+      if (this.isAWhatsappWhatsappCloudInbox) {
+        return `${this.$t('INBOX_MGMT.FINISH.MESSAGE')}. ${this.$t(
+          'INBOX_MGMT.ADD.WHATSAPP.API_CALLBACK.SUBTITLE'
+        )}`;
+      }
+
       if (this.isAEmailInbox) {
         return this.$t('INBOX_MGMT.ADD.EMAIL_CHANNEL.FINISH_MESSAGE');
       }
 
-      if (!this.currentInbox.web_widget_script) {
-        return this.$t('INBOX_MGMT.FINISH.MESSAGE');
+      if (this.currentInbox.web_widget_script) {
+        return this.$t('INBOX_MGMT.FINISH.WEBSITE_SUCCESS');
       }
-      return this.$t('INBOX_MGMT.FINISH.WEBSITE_SUCCESS');
+
+      return this.$t('INBOX_MGMT.FINISH.MESSAGE');
     },
   },
 };

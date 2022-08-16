@@ -1,34 +1,105 @@
 <template>
   <div class="bottom-box" :class="wrapClass">
     <div class="left-wrap">
-      <button
-        class="button clear button--emoji"
+      <woot-button
+        v-tooltip.top-end="$t('CONVERSATION.REPLYBOX.TIP_EMOJI_ICON')"
         :title="$t('CONVERSATION.REPLYBOX.TIP_EMOJI_ICON')"
+        icon="emoji"
+        emoji="😊"
+        color-scheme="secondary"
+        variant="smooth"
+        size="small"
         @click="toggleEmojiPicker"
+      />
+      <!-- ensure the same validations for attachment types are implemented in  backend models as well -->
+      <file-upload
+        ref="upload"
+        v-tooltip.top-end="$t('CONVERSATION.REPLYBOX.TIP_ATTACH_ICON')"
+        :size="4096 * 4096"
+        :accept="allowedFileTypes"
+        :multiple="enableMultipleFileUpload"
+        :drop="true"
+        :drop-directory="false"
+        :data="{
+          direct_upload_url: '/rails/active_storage/direct_uploads',
+          direct_upload: true,
+        }"
+        @input-file="onFileUpload"
       >
-        <emoji-or-icon icon="ion-happy-outline" emoji="😊" />
-      </button>
-      <button
-        v-if="showAttachButton"
-        class="button clear button--emoji button--upload"
-        :title="$t('CONVERSATION.REPLYBOX.TIP_ATTACH_ICON')"
-      >
-        <file-upload
-          :size="4096 * 4096"
-          accept="image/*, application/pdf, audio/mpeg, video/mp4, audio/ogg, text/csv"
-          @input-file="onFileUpload"
-        >
-          <emoji-or-icon icon="ion-android-attach" emoji="📎" />
-        </file-upload>
-      </button>
-      <button
+        <woot-button
+          v-if="showAttachButton"
+          class-names="button--upload"
+          :title="$t('CONVERSATION.REPLYBOX.TIP_ATTACH_ICON')"
+          icon="attach"
+          emoji="📎"
+          color-scheme="secondary"
+          variant="smooth"
+          size="small"
+        />
+      </file-upload>
+      <woot-button
         v-if="enableRichEditor && !isOnPrivateNote"
-        class="button clear button--emoji"
+        v-tooltip.top-end="$t('CONVERSATION.REPLYBOX.TIP_FORMAT_ICON')"
+        icon="quote"
+        emoji="🖊️"
+        color-scheme="secondary"
+        variant="smooth"
+        size="small"
         :title="$t('CONVERSATION.REPLYBOX.TIP_FORMAT_ICON')"
         @click="toggleFormatMode"
+      />
+      <woot-button
+        v-if="showAudioRecorderButton"
+        :icon="!isRecordingAudio ? 'microphone' : 'microphone-off'"
+        emoji="🎤"
+        :color-scheme="!isRecordingAudio ? 'secondary' : 'alert'"
+        variant="smooth"
+        size="small"
+        :title="$t('CONVERSATION.REPLYBOX.TIP_AUDIORECORDER_ICON')"
+        @click="toggleAudioRecorder"
+      />
+      <woot-button
+        v-if="showAudioPlayStopButton"
+        :icon="audioRecorderPlayStopIcon"
+        emoji="🎤"
+        color-scheme="secondary"
+        variant="smooth"
+        size="small"
+        @click="toggleAudioRecorderPlayPause"
       >
-        <emoji-or-icon icon="ion-quote" emoji="🖊️" />
-      </button>
+        <span>{{ recordingAudioDurationText }}</span>
+      </woot-button>
+      <woot-button
+        v-if="showMessageSignatureButton"
+        v-tooltip.top-end="signatureToggleTooltip"
+        icon="signature"
+        color-scheme="secondary"
+        variant="smooth"
+        size="small"
+        :title="signatureToggleTooltip"
+        @click="toggleMessageSignature"
+      />
+      <woot-button
+        v-if="hasWhatsappTemplates"
+        v-tooltip.top-end="'Whatsapp Templates'"
+        icon="whatsapp"
+        color-scheme="secondary"
+        variant="smooth"
+        size="small"
+        :title="'Whatsapp Templates'"
+        @click="$emit('selectWhatsappTemplate')"
+      />
+      <transition name="modal-fade">
+        <div
+          v-show="$refs.upload && $refs.upload.dropActive"
+          class="modal-mask"
+        >
+          <fluent-icon icon="cloud-backup" />
+          <h4 class="page-sub-title">
+            {{ $t('CONVERSATION.REPLYBOX.DRAG_DROP') }}
+          </h4>
+        </div>
+      </transition>
     </div>
     <div class="right-wrap">
       <div v-if="isFormatMode" class="enter-to-send--checkbox">
@@ -42,25 +113,36 @@
           {{ $t('CONVERSATION.REPLYBOX.ENTER_TO_SEND') }}
         </label>
       </div>
-      <button
-        class="button nice primary button--send"
-        :class="buttonClass"
+      <woot-button
+        size="small"
+        :class-names="buttonClass"
+        :is-disabled="isSendDisabled"
         @click="onSend"
       >
         {{ sendButtonText }}
-      </button>
+      </woot-button>
     </div>
   </div>
 </template>
 
 <script>
 import FileUpload from 'vue-upload-component';
-import EmojiOrIcon from 'shared/components/EmojiOrIcon';
+import * as ActiveStorage from 'activestorage';
+import {
+  hasPressedAltAndWKey,
+  hasPressedAltAndAKey,
+} from 'shared/helpers/KeyboardHelpers';
+import eventListenerMixins from 'shared/mixins/eventListenerMixins';
+import uiSettingsMixin from 'dashboard/mixins/uiSettings';
+import inboxMixin from 'shared/mixins/inboxMixin';
+
+import { ALLOWED_FILE_TYPES } from 'shared/constants/messages';
 
 import { REPLY_EDITOR_MODES } from './constants';
 export default {
-  name: 'ReplyTopPanel',
-  components: { EmojiOrIcon, FileUpload },
+  name: 'ReplyBottomPanel',
+  components: { FileUpload },
+  mixins: [eventListenerMixins, uiSettingsMixin, inboxMixin],
   props: {
     mode: {
       type: String,
@@ -74,7 +156,19 @@ export default {
       type: String,
       default: '',
     },
+    recordingAudioDurationText: {
+      type: String,
+      default: '',
+    },
+    inbox: {
+      type: Object,
+      default: () => ({}),
+    },
     showFileUpload: {
+      type: Boolean,
+      default: false,
+    },
+    showAudioRecorder: {
       type: Boolean,
       default: false,
     },
@@ -89,6 +183,22 @@ export default {
     toggleEmojiPicker: {
       type: Function,
       default: () => {},
+    },
+    toggleAudioRecorder: {
+      type: Function,
+      default: () => {},
+    },
+    toggleAudioRecorderPlayPause: {
+      type: Function,
+      default: () => {},
+    },
+    isRecordingAudio: {
+      type: Boolean,
+      default: false,
+    },
+    recordingAudioState: {
+      type: String,
+      default: '',
     },
     isSendDisabled: {
       type: Boolean,
@@ -114,6 +224,14 @@ export default {
       type: Boolean,
       default: true,
     },
+    enableMultipleFileUpload: {
+      type: Boolean,
+      default: true,
+    },
+    hasWhatsappTemplates: {
+      type: Boolean,
+      default: false,
+    },
   },
   computed: {
     isNote() {
@@ -126,29 +244,75 @@ export default {
     },
     buttonClass() {
       return {
-        'button--note': this.isNote,
-        'button--disabled': this.isSendDisabled,
+        warning: this.isNote,
       };
     },
     showAttachButton() {
       return this.showFileUpload || this.isNote;
     },
+    showAudioRecorderButton() {
+      return this.showAudioRecorder;
+    },
+    showAudioPlayStopButton() {
+      return this.showAudioRecorder && this.isRecordingAudio;
+    },
+    allowedFileTypes() {
+      return ALLOWED_FILE_TYPES;
+    },
+    audioRecorderPlayStopIcon() {
+      switch (this.recordingAudioState) {
+        // playing paused recording stopped inactive destroyed
+        case 'playing':
+          return 'microphone-pause';
+        case 'paused':
+          return 'microphone-play';
+        case 'stopped':
+          return 'microphone-play';
+        default:
+          return 'microphone-stop';
+      }
+    },
+    showMessageSignatureButton() {
+      return !this.isPrivate && this.isAnEmailChannel;
+    },
+    sendWithSignature() {
+      const { send_with_signature: isEnabled } = this.uiSettings;
+      return isEnabled;
+    },
+    signatureToggleTooltip() {
+      return this.sendWithSignature
+        ? this.$t('CONVERSATION.FOOTER.DISABLE_SIGN_TOOLTIP')
+        : this.$t('CONVERSATION.FOOTER.ENABLE_SIGN_TOOLTIP');
+    },
+  },
+  mounted() {
+    ActiveStorage.start();
   },
   methods: {
+    handleKeyEvents(e) {
+      if (hasPressedAltAndWKey(e)) {
+        this.toggleFormatMode();
+      }
+      if (hasPressedAltAndAKey(e)) {
+        this.$refs.upload.$children[1].$el.click();
+      }
+    },
     toggleFormatMode() {
       this.setFormatMode(!this.isFormatMode);
     },
     toggleEnterToSend() {
       this.$emit('toggleEnterToSend', !this.enterToSendEnabled);
     },
+    toggleMessageSignature() {
+      this.updateUISettings({
+        send_with_signature: !this.sendWithSignature,
+      });
+    },
   },
 };
 </script>
 
 <style lang="scss" scoped>
-@import '~widget/assets/scss/variables.scss';
-@import '~widget/assets/scss/mixins.scss';
-
 .bottom-box {
   display: flex;
   justify-content: space-between;
@@ -159,53 +323,13 @@ export default {
   }
 }
 
-.button {
-  &.button--emoji {
-    margin-right: var(--space-small);
-  }
-
-  &.is-active {
-    background: white;
-  }
-
-  &.button--note {
-    background: var(--y-800);
-    color: white;
-
-    &:hover {
-      background: var(--y-700);
-    }
-  }
-
-  &.button--disabled {
-    background: var(--b-100);
-    color: var(--b-400);
-    cursor: default;
-
-    &:hover {
-      background: var(--b-100);
-    }
-  }
-}
-
-.bottom-box.is-note-mode {
-  .button--emoji {
-    background: white;
-  }
+.left-wrap .button {
+  margin-right: var(--space-small);
 }
 
 .left-wrap {
   align-items: center;
   display: flex;
-}
-
-.button--reply {
-  border-right: 1px solid var(--color-border-light);
-}
-
-.icon--font {
-  color: var(--s-600);
-  font-size: var(--font-size-default);
 }
 
 .right-wrap {
@@ -224,5 +348,28 @@ export default {
       font-size: var(--font-size-mini);
     }
   }
+}
+
+::v-deep .file-uploads {
+  label {
+    cursor: pointer;
+  }
+  &:hover .button {
+    background: var(--s-100);
+  }
+}
+
+.modal-mask {
+  color: var(--s-600);
+  background: var(--white-transparent);
+  flex-direction: column;
+}
+
+.page-sub-title {
+  color: var(--s-600);
+}
+
+.icon {
+  font-size: 8rem;
 }
 </style>

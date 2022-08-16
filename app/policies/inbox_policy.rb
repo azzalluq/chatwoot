@@ -11,16 +11,19 @@ class InboxPolicy < ApplicationPolicy
     end
 
     def resolve
-      if @account_user.administrator?
-        scope.all
-      elsif @account_user.agent?
-        user.assigned_inboxes
-      end
+      user.assigned_inboxes
     end
   end
 
   def index?
     true
+  end
+
+  def show?
+    # FIXME: for agent bots, lets bring this validation to policies as well in future
+    return true if @user.blank?
+
+    Current.user.assigned_inboxes.include? record
   end
 
   def assignable_agents?
@@ -48,6 +51,10 @@ class InboxPolicy < ApplicationPolicy
   end
 
   def set_agent_bot?
+    @account_user.administrator?
+  end
+
+  def avatar?
     @account_user.administrator?
   end
 end

@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="preview-item__wrap">
     <div
       v-for="(attachment, index) in attachments"
       :key="attachment.id"
@@ -7,7 +7,7 @@
     >
       <div class="thumb-wrap">
         <img
-          v-if="isTypeImage(attachment.resource.type)"
+          v-if="isTypeImage(attachment.resource)"
           class="image-thumb"
           :src="attachment.thumb"
         />
@@ -15,21 +15,21 @@
       </div>
       <div class="file-name-wrap">
         <span class="item">
-          {{ attachment.resource.name }}
+          {{ fileName(attachment.resource) }}
         </span>
       </div>
       <div class="file-size-wrap">
-        <span class="item">
-          {{ formatFileSize(attachment.resource.size) }}
+        <span class="item text-truncate">
+          {{ formatFileSize(attachment.resource) }}
         </span>
       </div>
       <div class="remove-file-wrap">
-        <button
-          class="remove--attachment"
+        <woot-button
+          v-if="!isTypeAudio(attachment.resource)"
+          class="remove--attachment clear secondary"
+          icon="dismiss"
           @click="() => onRemoveAttachment(index)"
-        >
-          <i class="ion-android-close"></i>
-        </button>
+        />
       </div>
     </div>
   </div>
@@ -51,21 +51,42 @@ export default {
     onRemoveAttachment(index) {
       this.removeAttachment(index);
     },
-    formatFileSize(size) {
+    formatFileSize(file) {
+      const size = file.byte_size || file.size;
       return formatBytes(size, 0);
     },
-    isTypeImage(type) {
+    isTypeImage(file) {
+      const type = file.content_type || file.type;
       return type.includes('image');
+    },
+    isTypeAudio(file) {
+      const type = file.content_type || file.type;
+      return type.includes('audio');
+    },
+    fileName(file) {
+      return file.filename || file.name;
     },
   },
 };
 </script>
 <style lang="scss" scoped>
+.preview-item__wrap {
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  margin-top: var(--space-normal);
+  max-height: 20rem;
+}
+
 .preview-item {
   display: flex;
   padding: var(--space-slab) 0 0;
   background: var(--color-background-light);
-  background: transparent;
+  background: var(--b-50);
+  border-radius: var(--border-radius-normal);
+  width: 24rem;
+  padding: var(--space-smaller);
+  margin-bottom: var(--space-one);
 }
 
 .thumb-wrap {
@@ -101,6 +122,7 @@ export default {
 
   > .item {
     margin: 0;
+    overflow: hidden;
     font-size: var(--font-size-mini);
     font-weight: var(--font-weight-medium);
   }
@@ -111,9 +133,12 @@ export default {
 }
 
 .file-name-wrap {
-  max-width: 50%;
+  max-width: 60%;
+  min-width: 50%;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-left: var(--space-small);
+
   .item {
     height: var(--space-normal);
     overflow: hidden;
@@ -123,7 +148,7 @@ export default {
 }
 
 .file-size-wrap {
-  width: 20%;
+  width: 30%;
   justify-content: center;
 }
 

@@ -4,6 +4,7 @@
 
 .page-sub-title {
   font-size: $font-size-large;
+  word-wrap: break-word;
 }
 
 .block-title {
@@ -19,7 +20,7 @@
 }
 
 .text-muted {
-  color: $color-gray;
+  color: var(--s-300);
 }
 
 a {

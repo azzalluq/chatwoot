@@ -1,6 +1,6 @@
 <template>
   <div class="row ">
-    <div class="small-8 columns">
+    <div class="small-8 columns with-right-space ">
       <table v-if="hasConnectedHooks" class="woot-table">
         <thead>
           <th v-for="hookHeader in hookHeaders" :key="hookHeader">
@@ -24,14 +24,14 @@
             </td>
             <td class="button-wrapper">
               <woot-button
-                variant="link"
-                color-scheme="secondary"
-                icon="ion-close-circled"
+                v-tooltip.top="$t('INTEGRATION_APPS.LIST.DELETE.BUTTON_TEXT')"
+                variant="smooth"
+                color-scheme="alert"
+                size="tiny"
+                icon="dismiss-circle"
                 class-names="grey-btn"
                 @click="$emit('delete', hook)"
-              >
-                {{ $t('INTEGRATION_APPS.LIST.DELETE.BUTTON_TEXT') }}
-              </woot-button>
+              />
             </td>
           </tr>
         </tbody>
@@ -49,7 +49,7 @@
         <b>{{ integration.name }}</b>
       </p>
       <p
-        v-html="
+        v-dompurify-html="
           $t(
             `INTEGRATION_APPS.SIDEBAR_DESCRIPTION.${integration.name.toUpperCase()}`,
             { installationName: globalConfig.installationName }

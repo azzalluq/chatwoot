@@ -1,22 +1,34 @@
 <template>
   <button
     class="button"
+    :type="type"
     :class="buttonClasses"
     :disabled="isDisabled || isLoading"
     @click="handleClick"
   >
     <spinner v-if="isLoading" size="small" />
-    <i v-else-if="icon" class="icon" :class="icon"></i>
-    <span v-if="$slots.default" class="button__content"><slot></slot></span>
+    <emoji-or-icon
+      v-else-if="icon || emoji"
+      class="icon"
+      :emoji="emoji"
+      :icon="icon"
+      :icon-size="iconSize"
+    />
+    <span v-if="$slots.default" class="button__content"><slot /></span>
   </button>
 </template>
 <script>
-import Spinner from 'shared/components/Spinner.vue';
+import Spinner from 'shared/components/Spinner';
+import EmojiOrIcon from 'shared/components/EmojiOrIcon';
 
 export default {
   name: 'WootButton',
-  components: { Spinner },
+  components: { EmojiOrIcon, Spinner },
   props: {
+    type: {
+      type: String,
+      default: 'submit',
+    },
     variant: {
       type: String,
       default: '',
@@ -29,12 +41,16 @@ export default {
       type: String,
       default: '',
     },
+    emoji: {
+      type: String,
+      default: '',
+    },
     colorScheme: {
       type: String,
       default: 'primary',
     },
     classNames: {
-      type: String,
+      type: [String, Object],
       default: '',
     },
     isDisabled: {
@@ -57,15 +73,38 @@ export default {
       }
       return this.variant;
     },
+    hasOnlyIcon() {
+      const hasEmojiOrIcon = this.emoji || this.icon;
+      return !this.$slots.default && hasEmojiOrIcon;
+    },
+    hasOnlyIconClasses() {
+      return this.hasOnlyIcon ? 'button--only-icon' : '';
+    },
     buttonClasses() {
       return [
         this.variantClasses,
+        this.hasOnlyIconClasses,
         this.size,
         this.colorScheme,
         this.classNames,
         this.isDisabled ? 'disabled' : '',
         this.isExpanded ? 'expanded' : '',
       ];
+    },
+    iconSize() {
+      switch (this.size) {
+        case 'tiny':
+          return 12;
+        case 'small':
+          return 14;
+        case 'medium':
+          return 16;
+        case 'large':
+          return 18;
+
+        default:
+          return 16;
+      }
     },
   },
   methods: {

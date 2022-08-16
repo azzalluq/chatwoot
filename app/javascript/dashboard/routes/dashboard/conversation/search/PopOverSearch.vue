@@ -3,7 +3,7 @@
     <div class="search" :class="{ 'is-active': showSearchBox }">
       <woot-sidemenu-icon />
       <div class="icon">
-        <i class="ion-ios-search-strong search--icon" />
+        <fluent-icon icon="search" class="search--icon" size="28" />
       </div>
       <input
         v-model="searchTerm"
@@ -11,13 +11,17 @@
         :placeholder="$t('CONVERSATION.SEARCH_MESSAGES')"
         @focus="onSearch"
       />
+      <switch-layout
+        :is-on-expanded-layout="isOnExpandedLayout"
+        @toggle="$emit('toggle-conversation-layout')"
+      />
     </div>
     <div v-if="showSearchBox" class="results-wrap">
       <div class="show-results">
         <div>
           <div class="result-view">
             <div class="result">
-              Search Results
+              {{ $t('CONVERSATION.SEARCH.RESULT_TITLE') }}
               <span v-if="resultsCount" class="message-counter">
                 ({{ resultsCount }})
               </span>
@@ -55,10 +59,11 @@ import { mapGetters } from 'vuex';
 import timeMixin from '../../../../mixins/time';
 import ResultItem from './ResultItem';
 import messageFormatterMixin from 'shared/mixins/messageFormatterMixin';
-
+import SwitchLayout from './SwitchLayout.vue';
 export default {
   components: {
     ResultItem,
+    SwitchLayout,
   },
 
   directives: {
@@ -70,6 +75,13 @@ export default {
   },
 
   mixins: [timeMixin, messageFormatterMixin, clickaway],
+
+  props: {
+    isOnExpandedLayout: {
+      type: Boolean,
+      required: true,
+    },
+  },
 
   data() {
     return {

@@ -10,7 +10,7 @@
       :search-key="cannedSearchTerm"
       @click="insertCannedResponse"
     />
-    <div ref="editor"></div>
+    <div ref="editor" />
   </div>
 </template>
 
@@ -38,6 +38,11 @@ import CannedResponse from '../conversation/CannedResponse';
 const TYPING_INDICATOR_IDLE_TIME = 4000;
 
 import '@chatwoot/prosemirror-schema/src/woot-editor.css';
+import {
+  hasPressedAltAndPKey,
+  hasPressedAltAndLKey,
+} from 'shared/helpers/KeyboardHelpers';
+import eventListenerMixins from 'shared/mixins/eventListenerMixins';
 
 const createState = (content, placeholder, plugins = []) => {
   return EditorState.create({
@@ -53,10 +58,13 @@ const createState = (content, placeholder, plugins = []) => {
 export default {
   name: 'WootMessageEditor',
   components: { TagAgents, CannedResponse },
+  mixins: [eventListenerMixins],
   props: {
     value: { type: String, default: '' },
     placeholder: { type: String, default: '' },
     isPrivate: { type: Boolean, default: false },
+    isFormatMode: { type: Boolean, default: false },
+    enableSuggestions: { type: Boolean, default: true },
   },
   data() {
     return {
@@ -71,6 +79,10 @@ export default {
   },
   computed: {
     plugins() {
+      if (!this.enableSuggestions) {
+        return [];
+      }
+
       return [
         suggestionsPlugin({
           matcher: triggerCharacters('@'),
@@ -139,8 +151,17 @@ export default {
     value(newValue = '') {
       if (newValue !== this.lastValue) {
         const { tr } = this.state;
-        tr.insertText(newValue, 0, tr.doc.content.size);
-        this.state = this.view.state.apply(tr);
+        if (this.isFormatMode) {
+          this.state = createState(
+            newValue,
+            this.placeholder,
+            this.plugins,
+            this.isFormatMode
+          );
+        } else {
+          tr.insertText(newValue, 0, tr.doc.content.size);
+          this.state = this.view.state.apply(tr);
+        }
         this.view.updateState(this.state);
       }
     },
@@ -165,10 +186,28 @@ export default {
         blur: () => {
           this.onBlur();
         },
+        paste: (view, event) => {
+          const data = event.clipboardData.files;
+          if (data.length > 0) {
+            event.preventDefault();
+          }
+        },
       },
     });
+    this.focusEditorInputField();
   },
   methods: {
+    handleKeyEvents(e) {
+      if (hasPressedAltAndPKey(e)) {
+        this.focusEditorInputField();
+      }
+      if (hasPressedAltAndLKey(e)) {
+        this.focusEditorInputField();
+      }
+    },
+    focusEditorInputField() {
+      this.$refs.editor.querySelector('div.ProseMirror-woot-style').focus();
+    },
     insertMentionNode(mentionItem) {
       if (!this.view) {
         return null;
@@ -263,6 +302,13 @@ export default {
   overflow: auto;
 }
 
+.ProseMirror-prompt {
+  z-index: var(--z-index-highest);
+  background: var(--color-background-light);
+  border-radius: var(--border-radius-normal);
+  border: 1px solid var(--color-border);
+}
+
 .is-private {
   .prosemirror-mention-node {
     font-weight: var(--font-weight-medium);
@@ -270,5 +316,26 @@ export default {
     color: var(--s-900);
     padding: 0 var(--space-smaller);
   }
+}
+
+.editor-wrap {
+  margin-bottom: var(--space-normal);
+}
+
+.message-editor {
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-normal);
+  padding: 0 var(--space-slab);
+  margin-bottom: 0;
+}
+
+.editor_warning {
+  border: 1px solid var(--r-400);
+}
+
+.editor-warning__message {
+  color: var(--r-400);
+  font-weight: var(--font-weight-normal);
+  padding: var(--space-smaller) 0 0 0;
 }
 </style>

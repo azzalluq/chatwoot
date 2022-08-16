@@ -45,12 +45,11 @@
               :button-text="$t('LOGIN.SUBMIT')"
               :loading="loginApi.showLoading"
               button-class="large expanded"
-            >
-            </woot-submit-button>
+            />
           </div>
         </form>
         <div class="column text-center sigin__footer">
-          <p>
+          <p v-if="!globalConfig.disableUserProfileUpdate">
             <router-link to="auth/reset/password">
               {{ $t('LOGIN.FORGOT_PASSWORD') }}
             </router-link>
@@ -80,7 +79,8 @@ export default {
   mixins: [globalConfigMixin],
   props: {
     ssoAuthToken: { type: String, default: '' },
-    redirectUrl: { type: String, default: '' },
+    ssoAccountId: { type: String, default: '' },
+    ssoConversationId: { type: String, default: '' },
     config: { type: String, default: '' },
     email: { type: String, default: '' },
   },
@@ -133,9 +133,13 @@ export default {
     login() {
       this.loginApi.showLoading = true;
       const credentials = {
-        email: this.email ? this.email : this.credentials.email,
+        email: this.email
+          ? decodeURIComponent(this.email)
+          : this.credentials.email,
         password: this.credentials.password,
         sso_auth_token: this.ssoAuthToken,
+        ssoAccountId: this.ssoAccountId,
+        ssoConversationId: this.ssoConversationId,
       };
       this.$store
         .dispatch('login', credentials)
@@ -149,13 +153,17 @@ export default {
           }
 
           if (response && response.status === 401) {
-						const { errors } = response.data;
-						const hasAuthErrorMsg = errors && errors.length && errors[0] && typeof errors[0] === 'string';
+            const { errors } = response.data;
+            const hasAuthErrorMsg =
+              errors &&
+              errors.length &&
+              errors[0] &&
+              typeof errors[0] === 'string';
             if (hasAuthErrorMsg) {
               this.showAlert(errors[0]);
             } else {
-							this.showAlert(this.$t('LOGIN.API.UNAUTH'));
-						} 
+              this.showAlert(this.$t('LOGIN.API.UNAUTH'));
+            }
             return;
           }
           this.showAlert(this.$t('LOGIN.API.ERROR_MESSAGE'));

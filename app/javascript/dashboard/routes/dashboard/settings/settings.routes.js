@@ -8,8 +8,12 @@ import integrationapps from './integrationapps/integrations.routes';
 import labels from './labels/labels.routes';
 import profile from './profile/profile.routes';
 import reports from './reports/reports.routes';
+import campaigns from './campaigns/campaigns.routes';
 import teams from './teams/teams.routes';
+import attributes from './attributes/attributes.routes';
+import automation from './automation/automation.routes';
 import store from '../../../store';
+import billing from './billing/billing.routes';
 
 export default {
   routes: [
@@ -26,13 +30,17 @@ export default {
     },
     ...account.routes,
     ...agent.routes,
+    ...attributes.routes,
+    ...automation.routes,
+    ...billing.routes,
+    ...campaigns.routes,
     ...canned.routes,
     ...inbox.routes,
+    ...integrationapps.routes,
     ...integrations.routes,
     ...labels.routes,
     ...profile.routes,
     ...reports.routes,
     ...teams.routes,
-    ...integrationapps.routes,
   ],
 };
